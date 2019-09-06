@@ -1,0 +1,83 @@
+---
+title: "Moloco DS interview"
+author: "Lumi Huang"
+date: "9/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#import libaries
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+```
+
+```{r}
+#import data
+setwd(".")
+df <- read_xlsx("./Adops & Data Scientist Sample Data.xlsx")
+```
+
+```{r}
+head(df)
+```
+
+
+1. Consider only the rows with country_id = "BDV" (there are 844 such rows). For each site_id, we can compute the number of unique user_id's found in these 844 rows. Which site_id has the largest number of unique users? And what's the number?
+```{r}
+df %>% 
+  filter(country_id == "BDV") %>%
+  group_by(site_id) %>% 
+  summarise(distinct_users = n_distinct(user_id)) %>%
+  arrange(desc(distinct_users))
+```
+With 544 unique users, site 5NPAU has the largest number of unique users.
+
+
+2. Between 2019-02-03 00:00:00 and 2019-02-04 23:59:59, there are four users who visited a certain site more than 10 times. Find these four users & which sites they (each) visited more than 10 times. (Simply provides four triples in the form (user_id, site_id, number of visits) in the box below.)
+```{r}
+df %>%
+  mutate(time = as.POSIXct(ts, format = "%Y-%m-%d %H:%M:%S")) %>%
+  filter(time >= '2019-02-03 00:00:00' & time <= '2019-02-04 23:59:59') %>%
+  group_by(user_id, site_id) %>% 
+  count() %>%
+  filter(n > 10)
+```
+
+
+For each site, compute the unique number of users whose last visit (found in the original data set) was to that site. For instance, user "LC3561"'s last visit is to "N0OTG" based on timestamp data. Based on this measure, what are top three sites? (hint: site "3POLC" is ranked at 5th with 28 users whose last visit in the data set was to 3POLC; simply provide three pairs in the form (site_id, number of users).)
+```{r}
+df %>% 
+  mutate(time = as.POSIXct(ts, format = "%Y-%m-%d %H:%M:%S")) %>%
+  group_by(user_id) %>%
+  mutate(last_visit = max(time)) %>%
+  filter(last_visit == time) %>%
+  select(user_id, site_id, last_visit) %>%
+  group_by(site_id) %>% 
+  count() %>%
+  arrange(desc(n))
+  
+```
+
+For each user, determine the first site he/she visited and the last site he/she visited based on the timestamp data. Compute the number of users whose first/last visits are to the same website. What is the number?
+```{r}
+df %>% 
+  mutate(time = as.POSIXct(ts, format = "%Y-%m-%d %H:%M:%S")) %>%
+  group_by(user_id) %>%
+  mutate(first_visit = min(time)) %>%
+  filter(time == first_visit) %>% 
+  select(user_id, site_id, first_visit) %>% 
+  inner_join(df %>% 
+              mutate(time = as.POSIXct(ts, format = "%Y-%m-%d %H:%M:%S")) %>%
+              group_by(user_id) %>%
+              mutate(last_visit = max(time)) %>%
+              filter(time == last_visit) %>%
+              select(user_id, site_id, last_visit), by = "user_id") %>%
+  filter(site_id.x == site_id.y) %>%
+  nrow()
+
+```
