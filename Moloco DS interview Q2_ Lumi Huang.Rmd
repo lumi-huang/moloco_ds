@@ -1,0 +1,71 @@
+---
+title: "Moloco DS interview Q2_ Lumi Huang"
+author: "Lumi Huang"
+date: "9/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The data contains 300 rows and 3 columns (from the left, A, B, and C). Please build a good regression model which explains column C by a function of  A and B. 
+
+Note: Please do not use any ML libraries or packages. You can simply attach plot of data points and your regression model that fits the data points and of course, code point (preferably Github).
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(readxl)
+```
+
+```{r}
+#import data
+df <- read_xlsx("./Adops & Data Scientist Sample Data.xlsx", sheet = 2, col_names = c("A", "B", "C"))
+head(df)
+```
+
+```{r}
+#check missing value
+na_count <-sapply(df, function(y) sum(length(which(is.na(y)))))
+na_count <- data.frame(na_count)
+print(na_count)
+```
+
+
+```{r}
+#examine univariate distribution
+hist(df$A)
+hist(df$B)
+hist(df$C)
+```
+
+```{r}
+#check outliers
+plot(df$A, df$C)
+plot(df$B, df$C)
+```
+```{r}
+#remove the outlier
+df1 <- df %>%
+  filter(C > -2000)
+```
+
+```{r}
+#check outliers again
+plot(df1$A, df1$C) #Not simple and not monotone -> no power transformation
+plot(df1$B, df1$C) 
+```
+```{r}
+summary(df1$A)
+summary(df1$B)
+summary(df1$C)
+```
+```{r}
+#check correlation between A and B
+cor(df$A, df$B, method = "pearson")
+```
+
+```{r}
+fit <- lm(C ~ A + B + A * B, data=df1)
+summary(fit)
+```
